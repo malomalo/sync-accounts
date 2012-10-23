@@ -34,3 +34,10 @@ location where other clients can download.
 go through all the system users. If the username matches one of the user files
 then the ssh keys will be placed into authorized_keys. If the username matches
 a group name all the ssh keys for that group will be added to authorized_keys
+
+Installing
+==========
+
+`make install` will install the scripts into `/usr/loca/bin`
+
+`make uninstall` will remove the scripts from `/usr/loca/bin` 
