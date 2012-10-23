@@ -38,6 +38,14 @@ a group name all the ssh keys for that group will be added to authorized_keys
 Installing
 ==========
 
+### Scripts
+
 `make install` will install the scripts into `/usr/loca/bin`
 
 `make uninstall` will remove the scripts from `/usr/loca/bin` 
+
+### Cron
+
+You can set up cron to auto updated the ssh keys. Eg:
+
+`0 * * * * /usr/local/bin/ssh-install http://domain.com/keysfile`
