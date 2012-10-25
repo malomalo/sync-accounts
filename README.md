@@ -26,7 +26,7 @@ location where other clients can download.
 
 ### Extract
 
-`ssh-extract outputdir` will extract the keys to outputdir.
+`ssh-extract inputfile outputdir` will extract the keys to outputdir.
 
 ### Install
 
