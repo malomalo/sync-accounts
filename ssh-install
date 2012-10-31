@@ -43,7 +43,12 @@ def system_users
 end
 
 def write_authorized_keys(user, homedir, keys)
-  filename = File.join(homedir, '.ssh', 'authorized_keys')
+  ssh_dir = File.join(homedir, '.ssh')
+  FileUtils.mkdir_p(ssh_dir)
+  FileUtils.chown_R(user, user, ssh_dir)
+  FileUtils.chmod(0700, ssh_dir)
+
+  filename = File.join(ssh_dir, 'authorized_keys')
   open(filename, 'w') do |file|
     keys.each {|k| file.puts(k) }
   end
