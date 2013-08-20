@@ -1,4 +1,0 @@
-#!/bin/bash
-
-mkdir $2
-tar -zxvf $1 -C $2

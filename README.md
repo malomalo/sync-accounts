@@ -1,39 +1,29 @@
 SSH Key Managment
 =================
 
-These scripts allow you to manage ssh keys for users and groups of users
+These scripts allow you to manage ssh keys for users and apps
 
 ### Users
 
-User keys are placed in a file with the users name in the `users`
-directory. This file contains ssh keys for that user. Each line is one
-SSH key and blank lines are ignored.
+Users are listed in `permissions.yml`. Users are created and deleted on servers
+match the list in `permissions.yml`. SSH keys are retreived from github (user
+names are assumed to be the github usernames).
 
-### Groups
+### Apps
 
-Group files are placed in file with the group name in the `groups`
-directory. This file contains the names of users belonging to the
-group. Each line contains the one username. Blank lines are ignored.
+If an app user exist on a server the keys for the users listed under that app
+are copied over allowing the users to SSH and deploy the app on that server.
 
 Commands
 ========
 
-### Package
-
-To package the `users` and `groups` for distribution run the `ssh-package
-outputfile` script. This will generate a file that can be placed at a
-location where other clients can download.
-
-### Extract
-
-`ssh-extract inputfile outputdir` will extract the keys to outputdir.
-
 ### Install
 
-`ssh-install http://url/file` will download the file produced by `package` and
-go through all the system users. If the username matches one of the user files
-then the ssh keys will be placed into authorized_keys. If the username matches
-a group name all the ssh keys for that group will be added to authorized_keys
+`sync-accounts https://url/to/permissions.yml` will download the permissions
+file and sync the users. If a user is in `permissions.yml` that is not on the
+system that user will be created. If a user exist on the system but no in
+`permissions.yml` that user will be deleated. If an user with the name of an app
+exist the keys will be copied to that users `authorized_keys` file.
 
 Installing
 ==========
@@ -48,4 +38,4 @@ Installing
 
 You can set up cron to auto updated the ssh keys. Eg:
 
-`0 * * * * /usr/local/bin/ssh-install http://domain.com/keysfile`
+`0 * * * * /usr/local/bin/sync-accounts http://domain.com/permissions.yml`

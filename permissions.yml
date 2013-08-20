@@ -1,0 +1,10 @@
+users:
+  - github_user_name_1
+  - github_user_name_2
+
+apps:
+  app1-staging:
+  - github_user_name_1
+  - github_user_name_2
+  app1-production:
+    - github_user_name_1

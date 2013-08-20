@@ -1,3 +1,0 @@
-#!/bin/bash
-
-tar -zcf $1 users groups
