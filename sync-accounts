@@ -56,12 +56,12 @@ end
 def add_system_user(name)
   raise "invalid user name '#{name}'" unless name =~ /^[a-z][-a-z0-9]*$/
   
-  `adduser #{name} --gecos "" --disabled-password`
-  `usermod -a -G sudo #{name}`
+  `/usr/sbin/adduser #{name} --gecos "" --disabled-password`
+  `/usr/sbin/usermod -a -G sudo #{name}`
 end
 
 def remove_system_user(name)
-  `deluser --remove-home #{name}`
+  `/usr/sbin/deluser --remove-home #{name}`
 end
 
 def write_authorized_keys(user, homedir, keys)
