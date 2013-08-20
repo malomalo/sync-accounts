@@ -5,14 +5,17 @@ require 'net/http'
 require 'net/https'
 require 'fileutils'
 
+$key_cache = {}
 def github_keys(user)
+  return $key_cache[user] if $key_cache[user]
+
   http = Net::HTTP.new('github.com', 443)
   http.use_ssl = true
   http.verify_mode = OpenSSL::SSL::VERIFY_NONE
   
   response = http.request(Net::HTTP::Get.new("/#{user}.keys"))
   raise 'failure' unless response.is_a?(Net::HTTPOK)
-  response.body.split("\n")
+  $key_cache[user] = response.body.split("\n")
 end
 
 def read_permissions(url)
@@ -29,7 +32,7 @@ def read_permissions(url)
     permissions['users'][user] = github_keys(user)
   end
   yaml['apps'].each do |app, users|
-    permissions['apps'][app] = users.map{|u| permissions['users'][u] }.flatten
+    permissions['apps'][app] = users.map{|u| github_keys(u) }.flatten
   end
   
   permissions
