@@ -84,22 +84,28 @@ end
 
 permissions = read_permissions(ARGV[0])
 
+
 # Create missing users
-(permissions['users'].keys - system_users.map{|su| su[:name]}).each do |user|
+system_usernames = system_users.map{|su| su[:name]}
+permissions['users'].keys.each do |user|
+  user.gsub!(/^[0-9]*/, '')
+  next if system_usernames[user]
   puts "adding user #{user}"
   add_system_user(user)
 end
 
 # Removed old users
-(system_users.map{|su| su[:name]} - permissions['users'].keys).each do |user|
+system_usernames.each do |user|
+  next if permissions['users'].keys.map{|n| n.gsub(/^[0-9]*/, '')}[user]
   puts "removing user #{user}"
   remove_system_user(user)
 end
 
 # Write user ssh keys
 system_users.each do |su|
+  key = permissions['users'].keys.find {|key| key.gsub(/^[0-9]*/, '') == su[:name]}
   puts "writing authorized_keys for #{su[:name]}"
-  write_authorized_keys(su[:name], su[:home], permissions['users'][su[:name]])
+  write_authorized_keys(su[:name], su[:home], permissions['users'][key])
 end
 
 # Write app ssh keys
