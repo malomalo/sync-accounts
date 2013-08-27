@@ -88,7 +88,7 @@ permissions = read_permissions(ARGV[0])
 # Create missing users
 system_usernames = system_users.map{|su| su[:name]}
 permissions['users'].keys.each do |user|
-  user.gsub!(/^[0-9]*/, '')
+  user = user.gsub(/^[0-9]*/, '')
   next if system_usernames[user]
   puts "adding user #{user}"
   add_system_user(user)
