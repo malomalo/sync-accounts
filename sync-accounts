@@ -96,7 +96,7 @@ end
 
 # Removed old users
 system_usernames.each do |user|
-  next if permissions['users'].keys.map{|n| n.gsub(/^[0-9]*/, '')}[user]
+  next if permissions['users'].keys.map{|n| n.gsub(/^[0-9]*/, '')}.include?(user)
   puts "removing user #{user}"
   remove_system_user(user)
 end
