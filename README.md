@@ -30,9 +30,19 @@ Installing
 
 ### Scripts
 
-`make install` will install the scripts into `/usr/loca/bin`
+Install to `/usr/local/bin`:
 
-`make uninstall` will remove the scripts from `/usr/loca/bin` 
+    ./configure
+    sudo make install
+
+Install to `/usr/bin`:
+
+    ./configure --prefix=/usr
+    sudo make install
+
+Uninstall:
+
+    sudo make uninstall
 
 ### Cron
 
