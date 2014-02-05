@@ -2,7 +2,6 @@ Makefile
 /autom4te.cache
 /aclocal.m4
 /compile
-/configure
 /config.cache
 /config.status
 /config.log
