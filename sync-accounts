@@ -39,7 +39,7 @@ def read_permissions(url)
 end
 
 def system_users
-  users = `cat /etc/passwd | grep -v root | grep '/bin/bash'`.split.map do |u|
+  users = `cat /etc/passwd | grep -v root | grep '/bin/bash'`.split("\n").map do |u|
     u =~ /([^\s]+):.*:.*:.*:.*:([^\s]+):\/bin\/bash$/
     {:name => $1, :home => $2}
   end
@@ -48,7 +48,7 @@ def system_users
 end
 
 def system_apps
-  users = `cat /etc/passwd | grep -v root | grep '/bin/bash'`.split.map do |u|
+  users = `cat /etc/passwd | grep -v root | grep '/bin/bash'`.split("\n").map do |u|
     u =~ /([^\s]+):.*:.*:.*:.*:([^\s]+):\/bin\/bash$/
     {:name => $1, :home => $2}
   end
