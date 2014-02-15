@@ -64,7 +64,7 @@ def add_system_user(name)
 end
 
 def remove_system_user(name)
-  `/usr/sbin/deluser --remove-home #{name}`
+  `/usr/bin/userdel --remove #{name}`
 end
 
 def write_authorized_keys(user, homedir, keys)
