@@ -59,8 +59,8 @@ end
 def add_system_user(name)
   raise "invalid user name '#{name}'" unless name =~ /^[a-z][-a-z0-9]*$/
   
-  `/usr/sbin/adduser #{name} --gecos "" --disabled-password`
-  `/usr/sbin/usermod -a -G sudo #{name}`
+  `/usr/sbin/useradd --create-home #{name}`
+  `/usr/sbin/usermod -a -G wheel #{name}`
 end
 
 def remove_system_user(name)
@@ -81,9 +81,21 @@ def write_authorized_keys(user, homedir, keys)
   FileUtils.chmod(0600, filename)
 end
 
+def permission_url(config_file_or_url)
+  config_file_or_url ||= '/etc/sync-accounts.conf'
+  
+  if File.exists?(config_file_or_url)
+    YAML.load(File.read(config_file_or_url))['url']
+  elsif config_file_or_url =~ URI::regexp
+    config_file_or_url
+  else
+    puts "Invalid permissions url or config file #{config_file_or_url}"
+    exit(false)
+  end
+end
 
-permissions = read_permissions(ARGV[0])
 
+permissions = read_permissions(permission_url(ARGV[0]))
 
 # Create missing users
 system_usernames = system_users.map{|su| su[:name]}

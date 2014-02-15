@@ -49,3 +49,13 @@ Uninstall:
 You can set up cron to auto updated the ssh keys. Eg:
 
 `0 * * * * /usr/local/bin/sync-accounts http://domain.com/permissions.yml`
+
+Or place a executable file in `/etc/cron.hourly`:
+
+``` bash
+sudo tee /etc/cron.hourly/sync-accounts <<'EOF'
+/usr/local/bin/sync-accounts http://domain.com/permissions.yml
+EOF
+
+sudo chmod +x /etc/cron.hourly/sync-accounts
+```
