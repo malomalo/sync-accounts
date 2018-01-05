@@ -28,11 +28,16 @@ def read_permissions(url)
   end
   
   # Add keys to users and apps
-  yaml['users'].each do |user|
-    permissions['users'][user] = github_keys(user)
+  if yaml['users']
+    yaml['users'].each do |user|
+      permissions['users'][user] = github_keys(user)
+    end
   end
-  yaml['apps'].each do |app, users|
-    permissions['apps'][app] = users.map{|u| github_keys(u) }.flatten
+
+  if yaml['apps']
+    yaml['apps'].each do |app, users|
+      permissions['apps'][app] = users.map{|u| github_keys(u) }.flatten
+    end
   end
   
   permissions
