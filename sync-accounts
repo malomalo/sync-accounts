@@ -55,21 +55,27 @@ def read_permissions(config_file_or_url)
   permissions
 end
 
+def shells
+  return $shells if defined?($shells)
+  $shells = File.read('/etc/shells').lines.map{|l|l.strip}.select { |l| !l.empty? && !l.start_with?('#') }
+  $shells
+end
+
 def system_users
-  users = `cat /etc/passwd | grep -v root | grep '/bin/bash'`.split("\n").map do |u|
-    u =~ /([^\s]+):.*:.*:.*:.*:([^\s]+):\/bin\/bash$/
-    {:name => $1, :home => $2}
+  users = `cat /etc/passwd | grep -v root`.split("\n").map do |u|
+    u =~ /([^\s]+):.*:.*:.*:.*:([^\s]+):([^:]+)$/
+    {name: $1, home: $2, shell: $3}
   end
-  users = users.select{|u| u[:home] && u[:name] }
+  users = users.select{|u| u[:home] && u[:name] && shells.include?(u[:shell]) }
   users.select{|u| u[:home].index('/home') == 0 }
 end
 
 def system_apps
-  users = `cat /etc/passwd | grep -v root | grep '/bin/bash'`.split("\n").map do |u|
-    u =~ /([^\s]+):.*:.*:.*:.*:([^\s]+):\/bin\/bash$/
-    {:name => $1, :home => $2}
+  users = `cat /etc/passwd | grep -v root`.split("\n").map do |u|
+    u =~ /([^\s]+):.*:.*:.*:.*:([^\s]+):([^:]+)$/
+    {name: $1, home: $2, shell: $3}
   end
-  users = users.select{|u| u[:home] && u[:name] }
+  users = users.select{|u| u[:home] && u[:name] && shells.include?(u[:shell]) }
   users.select{|u| u[:home].index('/srv') == 0 }
 end
 
