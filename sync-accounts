@@ -29,7 +29,7 @@ end
 def read_permissions(config_file_or_url)
   permissions = { 'apps' => {}, 'users' => {} }
 
-  yaml = if File.exists?(config_file_or_url)
+  yaml = if File.exist?(config_file_or_url)
     configs = YAML.load(File.read(config_file_or_url))
     configs['url'] ? read_permissions_from_url(configs['url']) : configs
   elsif config_file_or_url =~ URI::regexp
