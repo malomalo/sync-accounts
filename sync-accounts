@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 
 require 'uri'
 require 'yaml'
@@ -85,14 +85,14 @@ end
 
 def shells
   return $shells if defined?($shells)
-  $shells = File.read('/etc/shells').lines.map{|l|l.strip}.select { |l| !l.empty? && !l.start_with?('#') }
+  $shells = File.read('/etc/shells').lines.map(&:strip).select { |l| !l.empty? && !l.start_with?('#') }
 end
 
 def passwd_entries
   return $passwd_entries if defined?($passwd_entries)
   users = File.read('/etc/passwd').lines.map do |u|
     u =~ /^([^:]+):[^:]*:(\d+):[^:]*:[^:]*:([^:]+):([^:]+)$/
-    {name: $1, uid: $2.to_i, home: $3, shell: $4}
+    {name: $1.strip, uid: $2.to_i, home: $3.strip, shell: $4.strip}
   end
   $passwd_entries = users.select{|u| uid_range.include?(u[:uid]) && shells.include?(u[:shell]) }
 end
