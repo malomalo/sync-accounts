@@ -55,28 +55,37 @@ def read_permissions(config_file_or_url)
   permissions
 end
 
+def uid_range
+  return $uid_range if defined?($uid_range)
+  min, max = 1000, 60000
+  if File.exist?('/etc/login.defs')
+    File.read('/etc/login.defs').each_line do |line|
+      min = $1.to_i if line =~ /^\s*UID_MIN\s+(\d+)/
+      max = $1.to_i if line =~ /^\s*UID_MAX\s+(\d+)/
+    end
+  end
+  $uid_range = (min..max)
+end
+
 def shells
   return $shells if defined?($shells)
   $shells = File.read('/etc/shells').lines.map{|l|l.strip}.select { |l| !l.empty? && !l.start_with?('#') }
-  $shells
 end
 
 def system_users
-  users = `cat /etc/passwd | grep -v root`.split("\n").map do |u|
-    u =~ /([^\s]+):.*:.*:.*:.*:([^\s]+):([^:]+)$/
-    {name: $1, home: $2, shell: $3}
+  users = File.read('/etc/passwd').lines.map do |u|
+    u =~ /^([^:]+):[^:]*:(\d+):[^:]*:[^:]*:([^:]+):([^:]+)$/
+    {name: $1, uid: $2.to_i, home: $3, shell: $4}
   end
-  users = users.select{|u| u[:home] && u[:name] && shells.include?(u[:shell]) }
-  users.select{|u| u[:home].index('/home') == 0 }
+  users.select{|u| uid_range.include?(u[:uid]) && shells.include?(u[:shell]) && u[:home].start_with?('/home') }
 end
 
 def system_apps
-  users = `cat /etc/passwd | grep -v root`.split("\n").map do |u|
-    u =~ /([^\s]+):.*:.*:.*:.*:([^\s]+):([^:]+)$/
-    {name: $1, home: $2, shell: $3}
+  users = File.read('/etc/passwd').lines.map do |u|
+    u =~ /^([^:]+):[^:]*:(\d+):[^:]*:[^:]*:([^:]+):([^:]+)$/
+    {name: $1, uid: $2.to_i, home: $3, shell: $4}
   end
-  users = users.select{|u| u[:home] && u[:name] && shells.include?(u[:shell]) }
-  users.select{|u| u[:home].index('/srv') == 0 }
+  users.select{|u| uid_range.include?(u[:uid]) && shells.include?(u[:shell]) && u[:home].start_with?('/srv') }
 end
 
 def add_system_user(name)
