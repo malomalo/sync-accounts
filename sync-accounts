@@ -23,14 +23,14 @@ def read_permissions_from_url(url)
   http.use_ssl = url.scheme == 'https'
   
   response = http.request(Net::HTTP::Get.new(url.path))
-  YAML.load(response.body)
+  YAML.safe_load(response.body)
 end
 
 def read_permissions(config_file_or_url)
   permissions = { 'apps' => {}, 'users' => {} }
 
   yaml = if File.exist?(config_file_or_url)
-    configs = YAML.load(File.read(config_file_or_url))
+    configs = YAML.safe_load(File.read(config_file_or_url))
     configs['url'] ? read_permissions_from_url(configs['url']) : configs
   elsif config_file_or_url =~ URI::regexp
     read_permissions_from_url(config_file_or_url)
