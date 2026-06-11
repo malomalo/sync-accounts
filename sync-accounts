@@ -1,57 +1,71 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+
 require 'uri'
 require 'yaml'
 require 'net/http'
 require 'net/https'
 require 'fileutils'
 
+def http_get(url)
+  uri = URI.parse(url)
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = uri.scheme == 'https'
+
+  response = http.request(Net::HTTP::Get.new(uri.request_uri))
+  unless response.is_a?(Net::HTTPOK)
+    abort("failed to fetch #{url}: HTTP #{response.code} #{response.message}")
+  end
+  response.body
+end
+
 $key_cache = {}
 def github_keys(user)
-  return $key_cache[user] if $key_cache[user]
-
-  http = Net::HTTP.new('github.com', 443)
-  http.use_ssl = true
-  
-  response = http.request(Net::HTTP::Get.new("/#{user}.keys"))
-  raise 'failure' unless response.is_a?(Net::HTTPOK)
-  $key_cache[user] = response.body.split("\n").reject(&:empty?)
+  $key_cache[user] ||= http_get("https://github.com/#{user}.keys").split("\n").reject(&:empty?)
 end
 
 def read_permissions_from_url(url)
-  url = URI.parse(url)
-  http = Net::HTTP.new(url.host, url.port)
-  http.use_ssl = url.scheme == 'https'
-  
-  response = http.request(Net::HTTP::Get.new(url.path))
-  YAML.safe_load(response.body)
+  YAML.safe_load(http_get(url))
 end
 
 def read_permissions(config_file_or_url)
   permissions = { 'apps' => {}, 'users' => {} }
 
   yaml = if File.exist?(config_file_or_url)
-    configs = YAML.safe_load(File.read(config_file_or_url))
+    contents = File.read(config_file_or_url)
+    if contents.strip.empty?
+      abort("permissions config file \"#{config_file_or_url}\" is empty")
+    end
+    
+    configs = YAML.safe_load(contents)
     configs['url'] ? read_permissions_from_url(configs['url']) : configs
   elsif config_file_or_url =~ URI::regexp
     read_permissions_from_url(config_file_or_url)
   else
-    puts "Invalid permissions url or config file #{config_file_or_url}"
-    exit(false)
-  end
-  
-  # Add keys to users and apps
-  if yaml['users']
-    yaml['users'].each do |user|
-      permissions['users'][user] = github_keys(user)
-    end
+    abort("permissions config file \"#{config_file_or_url}\" not found")
   end
 
-  if yaml['apps']
-    yaml['apps'].each do |app, users|
-      permissions['apps'][app] = users.map{|u| github_keys(u) }.flatten
-    end
+  if !yaml.is_a?(Hash) ||
+     (!yaml['users'].nil? && !yaml['users'].is_a?(Array)) ||
+     (!yaml['apps'].nil? && !yaml['apps'].is_a?(Hash))
+    abort("permissions config syntax is incorrect")
   end
-  
+
+  users = yaml['users'] || []
+  apps = yaml['apps'] || {}
+
+  if users.empty? && apps.empty?
+    abort("permissions config is missing 'users' or 'apps' — refusing to sync")
+  end
+
+  users.each do |user|
+    permissions['users'][user] = github_keys(user)
+  end
+
+  apps.each do |app, app_users|
+    permissions['apps'][app] = app_users.map{|u| github_keys(u) }.flatten
+  end
+
   permissions
 end
 
