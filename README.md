@@ -47,13 +47,11 @@ sync-accounts to be the sole source of authorized keys.
 
 Install to `/usr/local/bin`:
 
-    ./configure
     sudo make install
 
 Install to `/usr/bin`:
 
-    ./configure --prefix=/usr
-    sudo make install
+    sudo make install prefix=/usr
 
 Uninstall:
 
