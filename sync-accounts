@@ -116,15 +116,19 @@ def local_user_name(github_username)
   github_username.sub(/^[0-9]+/, '')
 end
 
+def run!(*cmd)
+  abort("command failed (exit #{$?.exitstatus}): #{cmd.join(' ')}") unless system(*cmd)
+end
+
 def add_system_user(name)
   validate_user_name!(name)
-  `/usr/sbin/useradd --create-home #{name}`
-  `/usr/sbin/usermod -a -G wheel #{name}`
+  run!('/usr/sbin/useradd', '--create-home', name)
+  run!('/usr/sbin/usermod', '-a', '-G', 'wheel', name)
 end
 
 def remove_system_user(name)
   validate_user_name!(name)
-  `/usr/bin/userdel --remove #{name}`
+  run!('/usr/bin/userdel', '--remove', name)
   FileUtils.rm_f(File.join(AUTHORIZED_KEYS_DIR, name))
 end
 
