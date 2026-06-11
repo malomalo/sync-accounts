@@ -109,6 +109,13 @@ def validate_user_name!(name)
   raise "invalid user name '#{name}'" unless name =~ /^[a-z][-a-z0-9]*$/
 end
 
+# GitHub usernames may start with a digit (e.g. "1password") but Linux
+# usernames must start with a letter; strip leading digits to get the
+# local system username.
+def local_user_name(github_username)
+  github_username.sub(/^[0-9]+/, '')
+end
+
 def add_system_user(name)
   validate_user_name!(name)
   `/usr/sbin/useradd --create-home #{name}`
@@ -134,8 +141,8 @@ permissions = read_permissions(ARGV[0] || '/etc/sync-accounts.conf')
 
 # Create missing users
 system_usernames = system_users.map{|su| su[:name]}
-permissions['users'].keys.each do |user|
-  user = user.gsub(/^[0-9]*/, '')
+permission_usernames = permissions['users'].keys.map{|k| local_user_name(k) }
+permission_usernames.each do |user|
   next if system_usernames.include?(user)
   puts "adding user #{user}"
   add_system_user(user)
@@ -143,14 +150,14 @@ end
 
 # Removed old users
 system_usernames.each do |user|
-  next if permissions['users'].keys.map{|n| n.gsub(/^[0-9]*/, '')}.include?(user)
+  next if permission_usernames.include?(user)
   puts "removing user #{user}"
   remove_system_user(user)
 end
 
 # Write user ssh keys
 system_users.each do |su|
-  key = permissions['users'].keys.find {|key| key.gsub(/^[0-9]*/, '') == su[:name]}
+  key = permissions['users'].keys.find {|k| local_user_name(k) == su[:name] }
   puts "writing authorized_keys for #{su[:name]}"
   write_authorized_keys(su[:name], permissions['users'][key])
 end

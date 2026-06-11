@@ -6,8 +6,12 @@ These scripts allow you to manage ssh keys for users and apps
 ### Users
 
 Users are listed in `permissions.yml`. Users are created and deleted on servers
-match the list in `permissions.yml`. SSH keys are retreived from github (user
+to match the list in `permissions.yml`. SSH keys are retrieved from github (user
 names are assumed to be the github usernames).
+
+GitHub usernames may start with a digit, but Linux usernames must start with
+a letter. When a `permissions.yml` entry begins with digits (e.g. `1password`),
+the leading digits are stripped to derive the local system username.
 
 ### Apps
 
