@@ -14,7 +14,7 @@ def github_keys(user)
   
   response = http.request(Net::HTTP::Get.new("/#{user}.keys"))
   raise 'failure' unless response.is_a?(Net::HTTPOK)
-  $key_cache[user] = response.body.split("\n")
+  $key_cache[user] = response.body.split("\n").reject(&:empty?)
 end
 
 def read_permissions_from_url(url)
