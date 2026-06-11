@@ -72,20 +72,21 @@ def shells
   $shells = File.read('/etc/shells').lines.map{|l|l.strip}.select { |l| !l.empty? && !l.start_with?('#') }
 end
 
-def system_users
+def passwd_entries
+  return $passwd_entries if defined?($passwd_entries)
   users = File.read('/etc/passwd').lines.map do |u|
     u =~ /^([^:]+):[^:]*:(\d+):[^:]*:[^:]*:([^:]+):([^:]+)$/
     {name: $1, uid: $2.to_i, home: $3, shell: $4}
   end
-  users.select{|u| uid_range.include?(u[:uid]) && shells.include?(u[:shell]) && u[:home].start_with?('/home') }
+  $passwd_entries = users.select{|u| uid_range.include?(u[:uid]) && shells.include?(u[:shell]) }
+end
+
+def system_users
+  passwd_entries.select{|u| u[:home].start_with?('/home') }
 end
 
 def system_apps
-  users = File.read('/etc/passwd').lines.map do |u|
-    u =~ /^([^:]+):[^:]*:(\d+):[^:]*:[^:]*:([^:]+):([^:]+)$/
-    {name: $1, uid: $2.to_i, home: $3, shell: $4}
-  end
-  users.select{|u| uid_range.include?(u[:uid]) && shells.include?(u[:shell]) && u[:home].start_with?('/srv') }
+  passwd_entries.select{|u| u[:home].start_with?('/srv') }
 end
 
 def add_system_user(name)
