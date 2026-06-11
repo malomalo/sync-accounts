@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+VERSION = '0.2.0'
+
 require 'uri'
 require 'yaml'
 require 'net/http'
@@ -139,6 +141,11 @@ def write_authorized_keys(user, keys)
   File.open(filename, 'w', 0644) do |file|
     keys.each {|k| file.puts(k) }
   end
+end
+
+if ARGV[0] == '-v' || ARGV[0] == '--version'
+  puts "sync-accounts #{VERSION}"
+  exit
 end
 
 permissions = read_permissions(ARGV[0] || '/etc/sync-accounts.conf')
