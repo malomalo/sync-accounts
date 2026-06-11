@@ -89,29 +89,31 @@ def system_apps
   passwd_entries.select{|u| u[:home].start_with?('/srv') }
 end
 
-def add_system_user(name)
+AUTHORIZED_KEYS_DIR = '/etc/ssh/authorized_keys'
+
+def validate_user_name!(name)
   raise "invalid user name '#{name}'" unless name =~ /^[a-z][-a-z0-9]*$/
-  
+end
+
+def add_system_user(name)
+  validate_user_name!(name)
   `/usr/sbin/useradd --create-home #{name}`
   `/usr/sbin/usermod -a -G wheel #{name}`
 end
 
 def remove_system_user(name)
+  validate_user_name!(name)
   `/usr/bin/userdel --remove #{name}`
+  FileUtils.rm_f(File.join(AUTHORIZED_KEYS_DIR, name))
 end
 
-def write_authorized_keys(user, homedir, keys)
-  ssh_dir = File.join(homedir, '.ssh')
-  FileUtils.mkdir_p(ssh_dir)
-  FileUtils.chown_R(user, user, ssh_dir)
-  FileUtils.chmod(0700, ssh_dir)
-
-  filename = File.join(ssh_dir, 'authorized_keys')
-  open(filename, 'w') do |file|
+def write_authorized_keys(user, keys)
+  validate_user_name!(user)
+  FileUtils.mkdir_p(AUTHORIZED_KEYS_DIR, mode: 0755)
+  filename = File.join(AUTHORIZED_KEYS_DIR, user)
+  File.open(filename, 'w', 0644) do |file|
     keys.each {|k| file.puts(k) }
   end
-  FileUtils.chown(user, user, filename)
-  FileUtils.chmod(0600, filename)
 end
 
 permissions = read_permissions(ARGV[0] || '/etc/sync-accounts.conf')
@@ -136,12 +138,12 @@ end
 system_users.each do |su|
   key = permissions['users'].keys.find {|key| key.gsub(/^[0-9]*/, '') == su[:name]}
   puts "writing authorized_keys for #{su[:name]}"
-  write_authorized_keys(su[:name], su[:home], permissions['users'][key])
+  write_authorized_keys(su[:name], permissions['users'][key])
 end
 
 # Write app ssh keys
 system_apps.each do |su|
   next if !permissions['apps'][su[:name]]
   puts "writing authorized_keys for #{su[:name]}"
-  write_authorized_keys(su[:name], su[:home], permissions['apps'][su[:name]])
+  write_authorized_keys(su[:name], permissions['apps'][su[:name]])
 end

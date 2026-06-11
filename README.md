@@ -28,6 +28,17 @@ exist the keys will be copied to that users `authorized_keys` file.
 Installing
 ==========
 
+### sshd
+
+`sync-accounts` writes each user's keys to `/etc/ssh/authorized_keys/<user>`
+(root-owned, outside the user's home, so it cannot be tampered with via
+symlinks). Tell `sshd` to read them by adding to `/etc/ssh/sshd_config`:
+
+    AuthorizedKeysFile /etc/ssh/authorized_keys/%u .ssh/authorized_keys
+
+Then reload sshd. Drop the trailing `.ssh/authorized_keys` if you want
+sync-accounts to be the sole source of authorized keys.
+
 ### Scripts
 
 Install to `/usr/local/bin`:
