@@ -15,8 +15,15 @@ the leading digits are stripped to derive the local system username.
 
 ### Apps
 
-If an app user exist on a server the keys for the users listed under that app
-are copied over allowing the users to SSH and deploy the app on that server.
+Each name under `apps` is an account on the server. If that account exists and
+has a login shell (listed in `/etc/shells`), the keys for the users listed
+under it are written to its `authorized_keys`, allowing those users to SSH in
+and deploy the app on that server. Its UID and home don't matter, so app
+accounts created as system users (e.g. by `systemd-sysusers`) work.
+
+App accounts are never created. `root`, and accounts managed under `users`,
+are skipped. An app listed with no users gets an empty `authorized_keys`,
+revoking access.
 
 Commands
 ========

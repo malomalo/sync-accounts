@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-VERSION = '0.2.2'
+VERSION = '0.2.3'
 
 require 'uri'
 require 'yaml'
@@ -64,8 +64,9 @@ def read_permissions(config_file_or_url)
     permissions['users'][user] = github_keys(user)
   end
 
+  # An app listed with no users gets an empty key list, revoking access.
   apps.each do |app, app_users|
-    permissions['apps'][app] = app_users.map{|u| github_keys(u) }.flatten
+    permissions['apps'][app] = Array(app_users).map{|u| github_keys(u) }.flatten
   end
 
   permissions
@@ -102,14 +103,25 @@ def system_users
   passwd_entries.select{|u| u[:home].start_with?('/home') }
 end
 
-def system_apps
-  passwd_entries.select{|u| u[:home].start_with?('/srv') }
+# Every account in /etc/passwd that can log in (its shell is in /etc/shells),
+# whatever its UID or home. App accounts are usually system users (UID below
+# UID_MIN, e.g. created by systemd-sysusers), which passwd_entries leaves out.
+def login_accounts
+  File.read('/etc/passwd').lines.each_with_object({}) do |line, accounts|
+    name, _password, uid, _gid, _gecos, _home, shell = line.chomp.split(':', 7)
+    next if name.nil? || name.empty? || !shells.include?(shell.to_s.strip)
+    accounts[name] = { uid: uid.to_i }
+  end
 end
 
 AUTHORIZED_KEYS_DIR = '/etc/ssh/authorized_keys'
 
+def valid_user_name?(name)
+  name.is_a?(String) && name.match?(/^[a-z][-a-z0-9]*$/)
+end
+
 def validate_user_name!(name)
-  raise "invalid user name '#{name}'" unless name =~ /^[a-z][-a-z0-9]*$/
+  raise "invalid user name '#{name}'" unless valid_user_name?(name)
 end
 
 # GitHub usernames may start with a digit (e.g. "1password") but Linux
@@ -176,9 +188,24 @@ system_users.each do |su|
   write_authorized_keys(su[:name], permissions['users'][key])
 end
 
-# Write app ssh keys
-system_apps.each do |su|
-  next if !permissions['apps'][su[:name]]
-  puts "writing authorized_keys for #{su[:name]}"
-  write_authorized_keys(su[:name], permissions['apps'][su[:name]])
+# Write app ssh keys. An app is an existing account named under `apps:`;
+# naming it is the opt-in, so its UID and home don't matter. App accounts are
+# never created. root and accounts managed under `users:` are skipped, since
+# writing app keys would replace theirs.
+app_accounts = login_accounts
+user_names = system_users.map { |su| su[:name] }
+permissions['apps'].each do |app, keys|
+  account = app_accounts[app]
+  if !valid_user_name?(app)
+    puts "skipping app #{app}: invalid user name"
+  elsif account.nil?
+    puts "skipping app #{app}: no account with a login shell"
+  elsif account[:uid] == 0
+    puts "skipping app #{app}: refusing to write keys for a UID 0 account"
+  elsif user_names.include?(app)
+    puts "skipping app #{app}: managed under users"
+  else
+    puts "writing authorized_keys for #{app}"
+    write_authorized_keys(app, keys)
+  end
 end
